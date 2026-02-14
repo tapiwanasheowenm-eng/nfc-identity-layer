@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Edit Profile</title>
+
+<style>
+body { font-family: Arial; padding: 40px; background:#f4f4f4;}
+form { max-width: 500px; margin:auto; background:white; padding:25px; border-radius:12px;}
+input, textarea { width:100%; padding:10px; margin-bottom:10px;}
+button { padding:12px; background:#2E86C1; color:white; border:none; border-radius:8px;}
+</style>
+</head>
+<body>
+
+<form method="POST" enctype="multipart/form-data">
+
+<h2>Edit Profile</h2>
+
+Name:<input name="name" value="{{ profile[3] }}">
+Title:<input name="title" value="{{ profile[4] }}">
+Phone:<input name="phone" value="{{ profile[5] }}">
+WhatsApp:<input name="whatsapp" value="{{ profile[6] }}">
+Email:<input name="email" value="{{ profile[7] }}">
+Bio:<textarea name="bio">{{ profile[8] }}</textarea>
+
+New Profile Image:<input type="file" name="image">
+New Background Image:<input type="file" name="background">
+
+<button type="submit">Update</button>
+
+</form>
+
+</body>
+</html>

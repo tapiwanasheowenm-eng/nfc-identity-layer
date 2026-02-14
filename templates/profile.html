@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ profile[3] }}</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: url('/static/images/{{ profile[10] }}') no-repeat center center/cover;
+    margin:0;
+}
+.overlay {
+    background: rgba(0,0,0,0.7);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.card {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(20px);
+    padding:30px;
+    border-radius:20px;
+    width:95%;
+    max-width:420px;
+    color:white;
+}
+.btn {
+    display:block;
+    padding:12px;
+    margin:8px 0;
+    border-radius:10px;
+    text-align:center;
+    text-decoration:none;
+    font-weight:600;
+}
+.call { background:#2E86C1; color:white; }
+.whatsapp { background:#25D366; color:white; }
+.email { background:#5D6D7E; color:white; }
+.payment {
+    background:#1e293b;
+    padding:10px;
+    border-radius:10px;
+    margin-top:15px;
+}
+.payment div {
+    margin:6px 0;
+    font-size:14px;
+}
+.copy-btn {
+    background:#38bdf8;
+    color:black;
+    padding:5px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
+}
+.qr { text-align:center; margin-top:15px; }
+</style>
+
+<script>
+function copyText(text) {
+    navigator.clipboard.writeText(text);
+    alert("Copied: " + text);
+}
+</script>
+
+</head>
+<body>
+
+<div class="overlay">
+<div class="card">
+
+<h2>{{ profile[3] }}</h2>
+<p>{{ profile[4] }}</p>
+<p>{{ profile[8] }}</p>
+
+<a class="btn call" href="tel:{{ profile[5] }}">Call</a>
+<a class="btn whatsapp" href="https://wa.me/{{ profile[6] }}">WhatsApp</a>
+<a class="btn email" href="mailto:{{ profile[7] }}">Email</a>
+
+{% if profile[11] or profile[12] or profile[13] or profile[14] %}
+<div class="payment">
+<h4>Payment Options</h4>
+
+{% if profile[11] %}
+<div>
+EcoCash: {{ profile[11] }}
+<button class="copy-btn" onclick="copyText('{{ profile[11] }}')">Copy</button>
+</div>
+{% endif %}
+
+{% if profile[12] %}
+<div>
+Innbucks: {{ profile[12] }}
+<button class="copy-btn" onclick="copyText('{{ profile[12] }}')">Copy</button>
+</div>
+{% endif %}
+
+{% if profile[13] %}
+<div>
+Bank: {{ profile[13] }}
+<button class="copy-btn" onclick="copyText('{{ profile[13] }}')">Copy</button>
+</div>
+{% endif %}
+
+{% if profile[14] %}
+<div>
+<a href="{{ profile[14] }}" target="_blank">Pay via PayPal</a>
+</div>
+{% endif %}
+
+</div>
+{% endif %}
+
+<div class="qr">
+<img src="/static/qr/{{ profile[1] }}.png" width="110">
+</div>
+
+</div>
+</div>
+
+</body>
+</html>

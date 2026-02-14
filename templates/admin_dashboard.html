@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+
+<style>
+body { font-family: Arial; background:#0f172a; color:white; padding:40px;}
+.card { background:#1e293b; padding:20px; margin-bottom:20px; border-radius:10px;}
+a { color:#38bdf8; text-decoration:none;}
+table { width:100%; margin-top:20px;}
+td, th { padding:10px; border-bottom:1px solid #333;}
+button { background:red; color:white; padding:5px 10px; border:none; border-radius:5px;}
+</style>
+
+</head>
+<body>
+
+<h1>Developer Dashboard</h1>
+
+<div class="card">
+Total Users: {{ total_users }}
+</div>
+
+<div class="card">
+Total Platform Taps: {{ total_taps }}
+</div>
+
+<h3>User List</h3>
+
+<table>
+<tr>
+<th>Username</th>
+<th>Taps</th>
+<th>Action</th>
+</tr>
+
+{% for user in user_data %}
+<tr>
+<td>{{ user[0] }}</td>
+<td>{{ user[1] }}</td>
+<td>
+<a href="/delete-user/{{ user[0] }}">
+<button>Delete</button>
+</a>
+</td>
+</tr>
+{% endfor %}
+
+</table>
+
+<br>
+<a href="/admin-logout">Logout</a>
+
+</body>
+</html>
+<h1>Admin Dashboard</h1>
+
+<h3>Open Reports</h3>
+
+<table border="1">
+<tr>
+<th>ID</th>
+<th>User</th>
+<th>Message</th>
+<th>Time</th>
+<th>Action</th>
+</tr>
+
+{% for report in open_reports %}
+<tr>
+<td>{{ report[0] }}</td>
+<td>{{ report[1] }}</td>
+<td>{{ report[2] }}</td>
+<td>{{ report[4] }}</td>
+<td>
+<a href="/resolve-report/{{ report[0] }}">Resolve</a>
+</td>
+</tr>
+{% endfor %}
+</table>
