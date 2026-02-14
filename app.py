@@ -16,9 +16,25 @@ DATABASE = 'database.db'
 @app.route('/')
 def home():
     return """
-    <h1>NFC Identity Layer Live 🚀</h1>
-    <p><a href='/register'>Register</a></p>
-    <p><a href='/admin-login'>Admin Login</a></p>
+    <html>
+    <body style="font-family: Arial; text-align:center; padding:50px;">
+        <h1>NFC Identity Layer 🚀</h1>
+        <p>Create your smart digital identity.</p>
+
+        <br><br>
+
+        <a href='/register' style="padding:10px 20px; background:black; color:white; text-decoration:none;">
+            Register
+        </a>
+
+        <br><br>
+
+        <a href='/login' style="padding:10px 20px; background:gray; color:white; text-decoration:none;">
+            Login
+        </a>
+
+    </body>
+    </html>
     """
 
 
@@ -129,7 +145,7 @@ def register():
 @app.route('/verify/<token>')
 def verify_email(token):
 
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect(DATABASE, check_same_thread=False)
     c = conn.cursor()
 
     c.execute("SELECT username FROM profiles WHERE verify_token=?", (token,))
@@ -139,10 +155,27 @@ def verify_email(token):
         c.execute("UPDATE profiles SET email_verified=1 WHERE verify_token=?", (token,))
         conn.commit()
         conn.close()
-        return "Email successfully verified!"
+
+        return """
+        <html>
+        <body style="font-family: Arial; text-align:center; padding:50px;">
+            <h2>Email Verified Successfully ✅</h2>
+            <p>Your account has been verified.</p>
+            <a href='/login' style="padding:10px 20px; background:black; color:white; text-decoration:none;">Go to Login</a>
+        </body>
+        </html>
+        """
+
     else:
         conn.close()
-        return "Invalid verification link."
+        return """
+        <html>
+        <body style="font-family: Arial; text-align:center; padding:50px;">
+            <h2>Invalid or Expired Verification Link ❌</h2>
+        </body>
+        </html>
+        """
+
 
 
 # -------------------------
