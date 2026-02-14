@@ -5,6 +5,14 @@ import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+@app.route('/')
+def home():
+    return """
+    <h1>NFC Identity Layer Live 🚀</h1>
+    <p><a href='/register'>Register</a></p>
+    <p><a href='/admin-login'>Admin Login</a></p>
+    """
+
 app.secret_key = "supersecretkey"
 
 DATABASE = 'database.db'
