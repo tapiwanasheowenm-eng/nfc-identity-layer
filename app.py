@@ -5,6 +5,14 @@ import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+app.secret_key = "supersecretkey"
+
+DATABASE = 'database.db'
+
+
+# -------------------------
+# HOME ROUTE (ONLY ONE)
+# -------------------------
 @app.route('/')
 def home():
     return """
@@ -12,10 +20,6 @@ def home():
     <p><a href='/register'>Register</a></p>
     <p><a href='/admin-login'>Admin Login</a></p>
     """
-
-app.secret_key = "supersecretkey"
-
-DATABASE = 'database.db'
 
 
 # -------------------------
@@ -66,20 +70,23 @@ def init_db():
         )
     ''')
 
-    # Default admin
+    # Default admin creation
     c.execute("SELECT * FROM admin WHERE username='admin'")
     if not c.fetchone():
-        c.execute("INSERT INTO admin (username, password) VALUES (?, ?)",
-                  ('admin', generate_password_hash('admin123')))
+        c.execute(
+            "INSERT INTO admin (username, password) VALUES (?, ?)",
+            ('admin', generate_password_hash('admin123'))
+        )
 
     conn.commit()
     conn.close()
+
 
 init_db()
 
 
 # -------------------------
-# REGISTER (EMAIL VERIFY TOKEN GENERATED)
+# REGISTER
 # -------------------------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -103,7 +110,6 @@ def register():
             conn.commit()
             conn.close()
 
-            # For now we display verification link (local testing)
             return f"""
             Registration successful.<br><br>
             VERIFY YOUR EMAIL:<br>
@@ -118,7 +124,7 @@ def register():
 
 
 # -------------------------
-# VERIFY EMAIL
+# EMAIL VERIFICATION
 # -------------------------
 @app.route('/verify/<token>')
 def verify_email(token):
@@ -155,7 +161,11 @@ def report(username):
         c.execute('''
             INSERT INTO reports (reported_username, message, timestamp)
             VALUES (?, ?, ?)
-        ''', (username, message, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        ''', (
+            username,
+            message,
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ))
 
         conn.commit()
         conn.close()
@@ -166,7 +176,7 @@ def report(username):
 
 
 # -------------------------
-# ADMIN DASHBOARD
+# ADMIN LOGIN
 # -------------------------
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
@@ -178,8 +188,10 @@ def admin_login():
 
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
+
         c.execute("SELECT password FROM admin WHERE username=?", (username,))
         admin = c.fetchone()
+
         conn.close()
 
         if admin and check_password_hash(admin[0], password):
@@ -191,6 +203,9 @@ def admin_login():
     return render_template('admin_login.html')
 
 
+# -------------------------
+# ADMIN DASHBOARD
+# -------------------------
 @app.route('/admin-dashboard')
 def admin_dashboard():
 
@@ -211,6 +226,9 @@ def admin_dashboard():
     )
 
 
+# -------------------------
+# RESOLVE REPORT
+# -------------------------
 @app.route('/resolve-report/<int:report_id>')
 def resolve_report(report_id):
 
@@ -226,15 +244,10 @@ def resolve_report(report_id):
 
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/')
-def home():
-    return """
-    <h1>NFC Identity Layer Live 🚀</h1>
-    <p><a href='/register'>Register</a></p>
-    <p><a href='/admin-login'>Admin Login</a></p>
-    """
 
+# -------------------------
+# RUN (LOCAL ONLY)
+# -------------------------
 if __name__ == '__main__':
     app.run()
-
 
