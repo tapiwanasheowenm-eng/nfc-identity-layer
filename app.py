@@ -3,39 +3,12 @@ import sqlite3
 from datetime import datetime
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 DATABASE = 'database.db'
-
-
-# -------------------------
-# HOME ROUTE (ONLY ONE)
-# -------------------------
-@app.route('/')
-def home():
-    return """
-    <html>
-    <body style="font-family: Arial; text-align:center; padding:50px;">
-        <h1>NFC Identity Layer 🚀</h1>
-        <p>Create your smart digital identity.</p>
-
-        <br><br>
-
-        <a href='/register' style="padding:10px 20px; background:black; color:white; text-decoration:none;">
-            Register
-        </a>
-
-        <br><br>
-
-        <a href='/login' style="padding:10px 20px; background:gray; color:white; text-decoration:none;">
-            Login
-        </a>
-
-    </body>
-    </html>
-    """
 
 
 # -------------------------
@@ -45,7 +18,7 @@ def init_db():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
 
-    # Users
+    # Users table
     c.execute('''
         CREATE TABLE IF NOT EXISTS profiles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,7 +50,7 @@ def init_db():
         )
     ''')
 
-    # Admin
+    # Admin table
     c.execute('''
         CREATE TABLE IF NOT EXISTS admin (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,6 +72,34 @@ def init_db():
 
 
 init_db()
+
+
+# -------------------------
+# HOME (ONLY ONE)
+# -------------------------
+@app.route('/')
+def home():
+    return """
+    <html>
+    <body style="font-family: Arial; text-align:center; padding:60px;">
+        <h1>NFC Identity Layer 🚀</h1>
+        <p>Create your smart digital identity.</p>
+
+        <br><br>
+
+        <a href='/register' style="padding:12px 25px; background:black; color:white; text-decoration:none;">
+            Register
+        </a>
+
+        <br><br>
+
+        <a href='/login' style="padding:12px 25px; background:gray; color:white; text-decoration:none;">
+            Login
+        </a>
+
+    </body>
+    </html>
+    """
 
 
 # -------------------------
@@ -127,14 +128,20 @@ def register():
             conn.close()
 
             return f"""
-            Registration successful.<br><br>
-            VERIFY YOUR EMAIL:<br>
-            <a href='/verify/{token}'>Click here to verify</a>
+            <html>
+            <body style="font-family: Arial; text-align:center; padding:50px;">
+                <h2>Registration Successful ✅</h2>
+                <p>Please verify your email.</p>
+                <a href='/verify/{token}' style="padding:10px 20px; background:black; color:white; text-decoration:none;">
+                    Verify Email
+                </a>
+            </body>
+            </html>
             """
 
         except:
             conn.close()
-            return "Username already exists"
+            return "<h3>Username already exists</h3>"
 
     return render_template('register.html')
 
@@ -145,7 +152,7 @@ def register():
 @app.route('/verify/<token>')
 def verify_email(token):
 
-    conn = sqlite3.connect(DATABASE, check_same_thread=False)
+    conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
 
     c.execute("SELECT username FROM profiles WHERE verify_token=?", (token,))
@@ -160,22 +167,90 @@ def verify_email(token):
         <html>
         <body style="font-family: Arial; text-align:center; padding:50px;">
             <h2>Email Verified Successfully ✅</h2>
-            <p>Your account has been verified.</p>
-            <a href='/login' style="padding:10px 20px; background:black; color:white; text-decoration:none;">Go to Login</a>
+            <p>You can now login.</p>
+            <a href='/login' style="padding:12px 25px; background:black; color:white; text-decoration:none;">
+                Go to Login
+            </a>
         </body>
         </html>
         """
-
     else:
         conn.close()
-        return """
-        <html>
-        <body style="font-family: Arial; text-align:center; padding:50px;">
-            <h2>Invalid or Expired Verification Link ❌</h2>
-        </body>
-        </html>
-        """
+        return "<h3>Invalid verification link</h3>"
 
+
+# -------------------------
+# USER LOGIN
+# -------------------------
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+
+    if request.method == 'POST':
+
+        username = request.form['username']
+        password = request.form['password']
+
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+
+        c.execute("SELECT password, email_verified FROM profiles WHERE username=?", (username,))
+        user = c.fetchone()
+        conn.close()
+
+        if user and check_password_hash(user[0], password):
+
+            if user[1] == 0:
+                return "<h3>Please verify your email before logging in.</h3>"
+
+            session['user'] = username
+            return redirect(url_for('dashboard'))
+
+        return "<h3>Invalid username or password</h3>"
+
+    return """
+    <html>
+    <body style="font-family: Arial; text-align:center; padding:50px;">
+        <h2>User Login</h2>
+        <form method="POST">
+            <input name="username" placeholder="Username"><br><br>
+            <input type="password" name="password" placeholder="Password"><br><br>
+            <button type="submit">Login</button>
+        </form>
+    </body>
+    </html>
+    """
+
+
+# -------------------------
+# USER DASHBOARD
+# -------------------------
+@app.route('/dashboard')
+def dashboard():
+
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    return f"""
+    <html>
+    <body style="font-family: Arial; text-align:center; padding:50px;">
+        <h2>Welcome, {session['user']} 🎉</h2>
+        <p>This is your dashboard.</p>
+
+        <br><br>
+
+        <a href='/logout'>Logout</a>
+    </body>
+    </html>
+    """
+
+
+# -------------------------
+# LOGOUT
+# -------------------------
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('home'))
 
 
 # -------------------------
@@ -203,13 +278,13 @@ def report(username):
         conn.commit()
         conn.close()
 
-        return "Report submitted successfully."
+        return "<h3>Report submitted successfully.</h3>"
 
     return render_template('report.html', username=username)
 
 
 # -------------------------
-# ADMIN LOGIN
+# ADMIN LOGIN (NOT LINKED PUBLICLY)
 # -------------------------
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
@@ -221,17 +296,15 @@ def admin_login():
 
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-
         c.execute("SELECT password FROM admin WHERE username=?", (username,))
         admin = c.fetchone()
-
         conn.close()
 
         if admin and check_password_hash(admin[0], password):
             session['admin'] = username
             return redirect(url_for('admin_dashboard'))
-        else:
-            return "Invalid admin credentials"
+
+        return "<h3>Invalid admin credentials</h3>"
 
     return render_template('admin_login.html')
 
@@ -253,15 +326,9 @@ def admin_dashboard():
 
     conn.close()
 
-    return render_template(
-        'admin_dashboard.html',
-        open_reports=open_reports
-    )
+    return render_template('admin_dashboard.html', open_reports=open_reports)
 
 
-# -------------------------
-# RESOLVE REPORT
-# -------------------------
 @app.route('/resolve-report/<int:report_id>')
 def resolve_report(report_id):
 
@@ -279,10 +346,8 @@ def resolve_report(report_id):
 
 
 # -------------------------
-# RUN (LOCAL ONLY)
+# RUN LOCAL
 # -------------------------
-import os
-
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
