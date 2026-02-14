@@ -218,6 +218,13 @@ def resolve_report(report_id):
 
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/')
+def home():
+    return """
+    <h1>NFC Identity Layer Live 🚀</h1>
+    <p><a href='/register'>Register</a></p>
+    <p><a href='/admin-login'>Admin Login</a></p>
+    """
 
 if __name__ == '__main__':
     app.run()
