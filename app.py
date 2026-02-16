@@ -72,6 +72,30 @@ def init_db():
 
 
 init_db()
+def alter_profiles_table():
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+
+    columns = [
+        "full_name TEXT",
+        "phone TEXT",
+        "bio TEXT",
+        "whatsapp TEXT",
+        "instagram TEXT",
+        "website TEXT"
+    ]
+
+    for column in columns:
+        try:
+            c.execute(f"ALTER TABLE profiles ADD COLUMN {column}")
+        except:
+            pass
+
+    conn.commit()
+    conn.close()
+
+alter_profiles_table()
+
 
 
 # -------------------------
@@ -230,18 +254,86 @@ def dashboard():
     if 'user' not in session:
         return redirect(url_for('login'))
 
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+
+    c.execute("SELECT COUNT(*) FROM analytics WHERE username=?", (session['user'],))
+    views = c.fetchone()[0]
+
+    conn.close()
+
+    profile_url = f"/u/{session['user']}"
+
     return f"""
     <html>
     <body style="font-family: Arial; text-align:center; padding:50px;">
         <h2>Welcome, {session['user']} 🎉</h2>
-        <p>This is your dashboard.</p>
 
-        <br><br>
+        <p>Total Profile Views: {views}</p>
 
-        <a href='/logout'>Logout</a>
+        <br>
+
+        <a href="{profile_url}">View Public Profile</a><br><br>
+        <a href="/edit-profile">Edit Profile</a><br><br>
+        <a href="/logout">Logout</a>
     </body>
     </html>
     """
+
+
+@app.route('/u/<username>')
+def public_profile(username):
+
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+
+    # Get profile
+    c.execute("""
+        SELECT full_name, phone, bio, whatsapp, instagram, website
+        FROM profiles
+        WHERE username=?
+    """, (username,))
+
+    user = c.fetchone()
+
+    if not user:
+        conn.close()
+        return "<h3>Profile not found</h3>"
+
+    # Track visit
+    c.execute("""
+        INSERT INTO analytics (username, timestamp)
+        VALUES (?, ?)
+    """, (username, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+    conn.commit()
+    conn.close()
+
+    full_name, phone, bio, whatsapp, instagram, website = user
+
+    return f"""
+    <html>
+    <body style="font-family:Arial; text-align:center; padding:50px;">
+        <h1>{full_name or username}</h1>
+        <p>{bio or ''}</p>
+
+        <br>
+
+        <p>📞 {phone or ''}</p>
+
+        <br>
+
+        {"<a href='"+whatsapp+"'>WhatsApp</a><br>" if whatsapp else ""}
+        {"<a href='"+instagram+"'>Instagram</a><br>" if instagram else ""}
+        {"<a href='"+website+"'>Website</a><br>" if website else ""}
+
+        <br><br>
+
+        <a href="/report/{username}">Report Profile</a>
+    </body>
+    </html>
+    """
+
 
 
 # -------------------------
@@ -282,6 +374,9 @@ def report(username):
 
     return render_template('report.html', username=username)
 
+@app.route('/check')
+def check():
+    return "Routes are loading"
 
 # -------------------------
 # ADMIN LOGIN (NOT LINKED PUBLICLY)
@@ -343,6 +438,63 @@ def resolve_report(report_id):
     conn.close()
 
     return redirect(url_for('admin_dashboard'))
+@app.route('/edit-profile', methods=['GET', 'POST'])
+def edit_profile():
+
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+
+    if request.method == 'POST':
+
+        c.execute("""
+            UPDATE profiles
+            SET full_name=?, phone=?, bio=?, whatsapp=?, instagram=?, website=?
+            WHERE username=?
+        """, (
+            request.form['full_name'],
+            request.form['phone'],
+            request.form['bio'],
+            request.form['whatsapp'],
+            request.form['instagram'],
+            request.form['website'],
+            session['user']
+        ))
+
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for('dashboard'))
+
+    c.execute("""
+        SELECT full_name, phone, bio, whatsapp, instagram, website
+        FROM profiles
+        WHERE username=?
+    """, (session['user'],))
+
+    user = c.fetchone()
+    conn.close()
+
+    full_name, phone, bio, whatsapp, instagram, website = user
+
+    return f"""
+    <html>
+    <body style="padding:40px; font-family:Arial;">
+        <h2>Edit Profile</h2>
+        <form method="POST">
+            <input name="full_name" placeholder="Full Name" value="{full_name or ''}"><br><br>
+            <input name="phone" placeholder="Phone" value="{phone or ''}"><br><br>
+            <textarea name="bio" placeholder="Bio">{bio or ''}</textarea><br><br>
+            <input name="whatsapp" placeholder="WhatsApp Link" value="{whatsapp or ''}"><br><br>
+            <input name="instagram" placeholder="Instagram Link" value="{instagram or ''}"><br><br>
+            <input name="website" placeholder="Website Link" value="{website or ''}"><br><br>
+            <button type="submit">Save</button>
+        </form>
+    </body>
+    </html>
+    """
 
 
 # -------------------------
